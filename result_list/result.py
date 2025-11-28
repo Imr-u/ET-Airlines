@@ -87,8 +87,8 @@ for item in job_items:
     })
 
 df_new = pd.DataFrame(results)
-if os.path.exists("results.jsonl"):
-    df_old = pd.read_json("results.jsonl", lines = True)
+if os.path.exists("result.jsonl"):
+    df_old = pd.read_json("result.jsonl", lines = True)
 else:
     df_old = pd.DataFrame(columns=df_new.columns)
 
@@ -97,5 +97,5 @@ df_combined = pd.concat([df_old, df_new], ignore_index=True)
 df_clean = df_combined.drop_duplicates(subset=["job_title", "announcement","location","date_time"], keep ='last')
 
 # === 7. Save the updated file ===
-df_clean.to_json("results.jsonl", orient="records", lines= True ,index=False)
+df_clean.to_json("result.jsonl", orient="records", lines= True ,index=False)
 

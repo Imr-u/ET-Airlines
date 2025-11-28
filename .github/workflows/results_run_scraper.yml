@@ -2,7 +2,7 @@ name: Results Scraper Every 10 Hours
 
 on:
   schedule:
-    - cron: '0 */10 * * *'   # Every 10 hours (UTC)
+    - cron: '0 0 */2 * *'   # Every 2 days 
   workflow_dispatch:         # (optional) Manual trigger from GitHub
 
 permissions:
@@ -30,7 +30,7 @@ jobs:
       run: |
         python result.py
 
-    - name: 💾 Commit CSV if changed
+    - name: 💾 Commit Jsonl if changed
       working-directory: result_list
       run: |
         git config --global user.name "github-actions[bot]"
