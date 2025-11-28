@@ -1,4 +1,4 @@
-name: Local Scraper Every 10 Hours
+name: Local Scraper Every 2 Days
 
 on:
   schedule:

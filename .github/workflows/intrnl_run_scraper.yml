@@ -1,4 +1,4 @@
-name: In Scraper Every 10 Hours
+name: In Scraper Every 2 days
 
 on:
   schedule:

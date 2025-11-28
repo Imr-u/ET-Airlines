@@ -1,4 +1,4 @@
-name: Results Scraper Every 10 Hours
+name: Results Scraper Every 2 Days
 
 on:
   schedule:
