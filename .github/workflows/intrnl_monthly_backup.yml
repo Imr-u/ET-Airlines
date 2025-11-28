@@ -1,0 +1,39 @@
+name: Monthly Jobs Backup
+
+on:
+  schedule:
+    - cron: '0 0 1 * *'   # Runs at 00:00 on the 1st of every month
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 📦 Checkout repository
+      uses: actions/checkout@v3
+
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: 🗂️ Create backup folder and copy jobs.csv
+      woriking-directory: ET-Airlines/in_jobs
+      run: |
+        mkdir -p backups
+        BACKUP_NAME="jobs_backup_$(date +'%Y-%m-%d').csv"
+        cp injobs.csv "backups/$BACKUP_NAME"
+
+    - name: 💾 Commit and push the backup
+      woriking-directory: ET-Airlines/in_jobs
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add backups/
+        git commit -m "📁 in_monthly_backup: $(date +'%Y-%m-%d')"
+        git push
+      continue-on-error: true

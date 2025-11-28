@@ -1,0 +1,39 @@
+name: Monthly Results Backup
+
+on:
+  schedule:
+    - cron: '0 0 1 * *'   # Runs at 00:00 on the 1st of every month
+  workflow_dispatch:
+  
+permissions:
+  contents: write
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 📦 Checkout repository
+      uses: actions/checkout@v3
+
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: 🗂️ Create backup folder and copy jobs.csv
+      worinng-directory: Et-Airlines/result_list
+      run: |
+        mkdir -p backups
+        BACKUP_NAME="result_backup_$(date +'%Y-%m-%d').csv"
+        cp result.jsonl "backups/$BACKUP_NAME"
+
+    - name: 💾 Commit and push the backup
+      worinng-directory: Et-Airlines/result_list
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add backups/
+        git commit -m "📁 result_monthly_backup: $(date +'%Y-%m-%d')"
+        git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+      continue-on-error: true
