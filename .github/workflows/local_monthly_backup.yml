@@ -22,14 +22,14 @@ jobs:
         python-version: '3.10'
 
     - name: 🗂️ Create backup folder and copy jobs.csv
-      worinng-directory: Et-Airlines/local_jobs
+      working-directory: Et-Airlines/local_jobs
       run: |
         mkdir -p backups
         BACKUP_NAME="jobs_backup_$(date +'%Y-%m-%d').csv"
         cp jobs.csv "backups/$BACKUP_NAME"
 
     - name: 💾 Commit and push the backup
-      worinng-directory: Et-Airlines/local_jobs
+      working-directory: Et-Airlines/local_jobs
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"

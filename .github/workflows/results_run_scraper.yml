@@ -26,12 +26,12 @@ jobs:
         pip install -r requirements.txt
 
     - name: 🧹 Run the scraper script
-      worinng-directory: Et-Airlines/result_list
+      working-directory: Et-Airlines/result_list
       run: |
         python result.py
 
     - name: 💾 Commit CSV if changed
-      worinng-directory: Et-Airlines/result_list
+      working-directory: Et-Airlines/result_list
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
