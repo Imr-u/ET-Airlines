@@ -1,4 +1,4 @@
-name: Run Scraper Every 10 Hours
+name: In Scraper Every 10 Hours
 
 on:
   schedule:
@@ -26,12 +26,12 @@ jobs:
         pip install -r requirements.txt
 
     - name: 🧹 Run the scraper script
-      working-directory: Et-Airlines/in_jobs
+      working-directory: in_jobs
       run: |
         python in.py
 
     - name: 💾 Commit CSV if changed
-      working-directory: Et-Airlines/in_jobs
+      working-directory: in_jobs
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"

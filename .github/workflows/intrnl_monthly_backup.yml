@@ -1,4 +1,4 @@
-name: Monthly Jobs Backup
+name: Monthly In Jobs Backup
 
 on:
   schedule:
@@ -22,14 +22,14 @@ jobs:
         python-version: '3.10'
 
     - name: 🗂️ Create backup folder and copy jobs.csv
-      working-directory: ET-Airlines/in_jobs
+      working-directory: in_jobs
       run: |
         mkdir -p backups
         BACKUP_NAME="jobs_backup_$(date +'%Y-%m-%d').csv"
         cp injobs.csv "backups/$BACKUP_NAME"
 
     - name: 💾 Commit and push the backup
-      working-directory: ET-Airlines/in_jobs
+      working-directory: in_jobs
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
