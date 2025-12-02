@@ -25,7 +25,7 @@ jobs:
       working-directory: result_list
       run: |
         mkdir -p backups
-        BACKUP_NAME="result_backup_$(date +'%Y-%m-%d').csv"
+        BACKUP_NAME="result_backup_$(date +'%Y-%m-%d').jsonl"
         cp result.jsonl "backups/$BACKUP_NAME"
 
     - name: 💾 Commit and push the backup
