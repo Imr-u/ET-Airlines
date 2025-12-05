@@ -94,7 +94,7 @@ else:
 
 # === 6. Merge and remove duplicates (by Position + Registration Date) ===
 df_combined = pd.concat([df_old, df_new], ignore_index=True)
-df_clean = df_combined.drop_duplicates(subset=["job_title", "announcement","location","date_time"], keep ='first')
+df_clean = df_combined.drop_duplicates(subset=["job_title", "announcement","location","date_time"])
 
 # === 7. Save the updated file ===
 df_clean.to_json("result.jsonl", orient="records", lines= True ,index=False)
