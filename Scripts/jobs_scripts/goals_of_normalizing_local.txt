@@ -1,0 +1,8 @@
+what is the goal of this task?
+	- To make the dataset suitable for analysis
+what kind of analysis are plnned to do with it?
+	- Including but not limited to answer this qns
+		1. what are the most listed jobs
+		2. In which reagion are the most jobs listed
+		3. In which months of the year are most jobs listed
+		4. How many days are given to apply begining from the opening post
