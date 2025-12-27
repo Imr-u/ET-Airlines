@@ -24,6 +24,7 @@ soup = BeautifulSoup(page.content, "html.parser")
 
 results = []
 scrape_time = date.today()
+scrape_time_iso = scrape_time.isoformat()
 job_items = soup.find_all("li")
 
 for item in job_items:
@@ -79,7 +80,7 @@ for item in job_items:
     results.append({
         "job_title": job_title,
         "location": location,
-        "scrape_time": scrape_time,
+        "scrape_time": scrape_time_iso,
         "date_time": date_time,
         "announcement": announcement,
         "candidates": candidate_list,
