@@ -23,7 +23,7 @@ soup = BeautifulSoup(page.content, "html.parser")
 
 
 results = []
-scrape_time = datetime.now().strftime("%Y-%m-%d")
+scrape_time = datetime.date.today()
 job_items = soup.find_all("li")
 
 for item in job_items:
