@@ -8,7 +8,7 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import os 
-from datetime import datetime
+from datetime import date
 
 
 # In[34]:
@@ -23,7 +23,7 @@ soup = BeautifulSoup(page.content, "html.parser")
 
 
 results = []
-scrape_time = datetime.date.today()
+scrape_time = date.today()
 job_items = soup.find_all("li")
 
 for item in job_items:
