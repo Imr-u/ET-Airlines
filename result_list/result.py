@@ -8,7 +8,7 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import os 
-from datetime import date
+from datetime import datetime
 
 
 # In[34]:
@@ -23,8 +23,7 @@ soup = BeautifulSoup(page.content, "html.parser")
 
 
 results = []
-scrape_time = date.today()
-scrape_time_iso = scrape_time.isoformat()
+scrape_time = date.now().strftime("%Y-%m-%d")
 job_items = soup.find_all("li")
 
 for item in job_items:
@@ -80,7 +79,7 @@ for item in job_items:
     results.append({
         "job_title": job_title,
         "location": location,
-        "scrape_time": scrape_time_iso,
+        "scrape_time": scrape_time,
         "date_time": date_time,
         "announcement": announcement,
         "candidates": candidate_list,
@@ -88,16 +87,15 @@ for item in job_items:
     })
 
 df_new = pd.DataFrame(results)
-if os.path.exists("result.jsonl"):
-    df_old = pd.read_json("result.jsonl", lines = True, convert_dates = False)
+if os.path.exists("results.jsonl"):
+    df_old = pd.read_json("results.jsonl", lines = True)
 else:
     df_old = pd.DataFrame(columns=df_new.columns)
 
 # === 6. Merge and remove duplicates (by Position + Registration Date) ===
 df_combined = pd.concat([df_old, df_new], ignore_index=True)
-df_clean = df_combined.drop_duplicates(subset=["job_title", "announcement","location","date_time"])
-df_clean['scrape_time'] = df_clean['scrape_time'].astype(str)
+df_clean = df_combined.drop_duplicates(subset=["job_title", "announcement","location","date_time"], keep ='last')
 
 # === 7. Save the updated file ===
-df_clean.to_json("result.jsonl", orient="records", lines= True ,index=False, date_format = 'iso')
+df_clean.to_json("results.jsonl", orient="records", lines= True ,index=False)
 
