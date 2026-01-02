@@ -23,7 +23,7 @@ soup = BeautifulSoup(page.content, "html.parser")
 
 
 results = []
-scrape_time = date.now().strftime("%Y-%m-%d")
+scrape_time = datetime.now().strftime("%Y-%m-%d")
 job_items = soup.find_all("li")
 
 for item in job_items:
@@ -88,14 +88,14 @@ for item in job_items:
 
 df_new = pd.DataFrame(results)
 if os.path.exists("result.jsonl"):
-    df_old = pd.read_json("results.jsonl", lines = True)
+    df_old = pd.read_json("result.jsonl", lines = True)
 else:
     df_old = pd.DataFrame(columns=df_new.columns)
 
 # === 6. Merge and remove duplicates (by Position + Registration Date) ===
 df_combined = pd.concat([df_old, df_new], ignore_index=True)
-df_clean = df_combined.drop_duplicates(subset=["job_title", "announcement","location","date_time"], keep ='last')
+df_clean = df_combined.drop_duplicates(subset=["job_title", "announcement","location","date_time"], keep ='first')
 
 # === 7. Save the updated file ===
-df_clean.to_json("results.jsonl", orient="records", lines= True ,index=False)
+df_clean.to_json("result.jsonl", orient="records", lines= True ,index=False)
 
