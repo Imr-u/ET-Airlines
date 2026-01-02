@@ -87,7 +87,7 @@ for item in job_items:
     })
 
 df_new = pd.DataFrame(results)
-if os.path.exists("results.jsonl"):
+if os.path.exists("result.jsonl"):
     df_old = pd.read_json("results.jsonl", lines = True)
 else:
     df_old = pd.DataFrame(columns=df_new.columns)
