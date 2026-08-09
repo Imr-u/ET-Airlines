@@ -247,6 +247,11 @@
   <section id="funnel-section">
     <div class="sec-label"><span class="tag">02</span><h2>Stage Funnel</h2><span class="rule"></span></div>
     <p class="sec-note">Every announcement is normalized to one of these stages by matching its posted title (e.g. "CALL FOR COMPETENCY-BASED INTERVIEW" and "Competency Based Interview (CBI)" both roll up to Competency-Based Interview). Bars show total candidate-name mentions logged at that stage across all postings — not a single cohort's drop-off, since each posting is its own hiring round.</p>
+    <div class="table-controls">
+      <input type="text" id="funnel-role-filter" placeholder="Filter by role / position…">
+      <input type="text" id="funnel-location-filter" placeholder="Filter by location…">
+    </div>
+    <div class="sec-note" id="funnel-filter-status" style="margin:-6px 0 14px;"></div>
     <div class="funnel" id="funnel"></div>
   </section>
 
@@ -430,13 +435,37 @@ function renderKpis(){
 
 /* ============ RENDER: FUNNEL ============ */
 function renderFunnel(){
+  const roleQ = document.getElementById('funnel-role-filter').value.trim().toUpperCase();
+  const locQ = document.getElementById('funnel-location-filter').value.trim().toUpperCase();
+
+  let recs = RECORDS;
+  if(roleQ) recs = recs.filter(r => (r.job_title||'').toUpperCase().includes(roleQ));
+  if(locQ) recs = recs.filter(r => (r.location||'').toUpperCase().includes(locQ));
+
+  const statusEl = document.getElementById('funnel-filter-status');
+  if(roleQ || locQ){
+    const mentions = recs.reduce((s,r)=>s+r._count,0);
+    statusEl.textContent = recs.length
+      ? `Showing ${recs.length.toLocaleString()} posting${recs.length>1?'s':''} · ${mentions.toLocaleString()} candidate mentions matching this filter.`
+      : `No postings match this filter.`;
+  } else {
+    statusEl.textContent = '';
+  }
+
   const counts = {};
   STAGE_ORDER.forEach(s=>counts[s]=0);
-  RECORDS.forEach(r=>{ counts[r._stage] = (counts[r._stage]||0) + r._count; });
+  recs.forEach(r=>{ counts[r._stage] = (counts[r._stage]||0) + r._count; });
   const max = Math.max(...Object.values(counts), 1);
   const el = document.getElementById('funnel');
+
+  if(recs.length === 0){
+    el.innerHTML = '<div style="padding:20px 18px;color:var(--muted);font-size:13px;">No postings match this filter — try a broader keyword.</div>';
+    return;
+  }
+
   el.innerHTML = STAGE_ORDER
     .map(s=>[s,counts[s]])
+    .filter(([,count])=>count>0)
     .sort((a,b)=>b[1]-a[1])
     .map(([stage,count])=>`
       <div class="funnel-row">
@@ -787,6 +816,8 @@ function renderAll(){
   renderPositions();
 }
 
+document.getElementById('funnel-role-filter').addEventListener('input', renderFunnel);
+document.getElementById('funnel-location-filter').addEventListener('input', renderFunnel);
 document.getElementById('role-form').addEventListener('submit', e=>{
   e.preventDefault();
   renderRoleExplorer(document.getElementById('role-input').value);
