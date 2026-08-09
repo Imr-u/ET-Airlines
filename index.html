@@ -175,6 +175,7 @@
     padding:9px 12px;border-radius:6px;font-size:12.5px;font-family:'Inter',sans-serif;
   }
   .table-controls input{flex:1;min-width:200px;}
+  .table-controls select{flex:1;min-width:200px;}
   .table-controls input:focus, .table-controls select:focus{outline:none;border-color:var(--amber);}
   .manifest{border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--panel);}
   .manifest-head{
@@ -248,8 +249,8 @@
     <div class="sec-label"><span class="tag">02</span><h2>Stage Funnel</h2><span class="rule"></span></div>
     <p class="sec-note">Every announcement is normalized to one of these stages by matching its posted title (e.g. "CALL FOR COMPETENCY-BASED INTERVIEW" and "Competency Based Interview (CBI)" both roll up to Competency-Based Interview). Bars show total candidate-name mentions logged at that stage across all postings — not a single cohort's drop-off, since each posting is its own hiring round.</p>
     <div class="table-controls">
-      <input type="text" id="funnel-role-filter" placeholder="Filter by role / position…">
-      <input type="text" id="funnel-location-filter" placeholder="Filter by location…">
+      <select id="funnel-role-filter"><option value="">All roles</option></select>
+      <select id="funnel-location-filter"><option value="">All locations</option></select>
     </div>
     <div class="sec-note" id="funnel-filter-status" style="margin:-6px 0 14px;"></div>
     <div class="funnel" id="funnel"></div>
@@ -433,14 +434,34 @@ function renderKpis(){
   document.getElementById('k-span').textContent = weeks;
 }
 
+/* ============ POPULATE FUNNEL FILTER DROPDOWNS ============ */
+function populateFunnelFilters(){
+  const roleSel = document.getElementById('funnel-role-filter');
+  const locSel = document.getElementById('funnel-location-filter');
+
+  const roles = [...new Set(RECORDS.map(r=>(r.job_title||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const locations = [...new Set(RECORDS.map(r=>(r.location||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+
+  roles.forEach(role=>{
+    const opt = document.createElement('option');
+    opt.value = role; opt.textContent = role;
+    roleSel.appendChild(opt);
+  });
+  locations.forEach(loc=>{
+    const opt = document.createElement('option');
+    opt.value = loc; opt.textContent = loc;
+    locSel.appendChild(opt);
+  });
+}
+
 /* ============ RENDER: FUNNEL ============ */
 function renderFunnel(){
-  const roleQ = document.getElementById('funnel-role-filter').value.trim().toUpperCase();
-  const locQ = document.getElementById('funnel-location-filter').value.trim().toUpperCase();
+  const roleQ = document.getElementById('funnel-role-filter').value;
+  const locQ = document.getElementById('funnel-location-filter').value;
 
   let recs = RECORDS;
-  if(roleQ) recs = recs.filter(r => (r.job_title||'').toUpperCase().includes(roleQ));
-  if(locQ) recs = recs.filter(r => (r.location||'').toUpperCase().includes(locQ));
+  if(roleQ) recs = recs.filter(r => (r.job_title||'').trim() === roleQ);
+  if(locQ) recs = recs.filter(r => (r.location||'').trim() === locQ);
 
   const statusEl = document.getElementById('funnel-filter-status');
   if(roleQ || locQ){
@@ -809,6 +830,7 @@ function renderManifest(){
 /* ============ WIRE UP ============ */
 function renderAll(){
   renderKpis();
+  populateFunnelFilters();
   renderFunnel();
   renderCharts();
   populateStageFilter();
@@ -816,8 +838,8 @@ function renderAll(){
   renderPositions();
 }
 
-document.getElementById('funnel-role-filter').addEventListener('input', renderFunnel);
-document.getElementById('funnel-location-filter').addEventListener('input', renderFunnel);
+document.getElementById('funnel-role-filter').addEventListener('change', renderFunnel);
+document.getElementById('funnel-location-filter').addEventListener('change', renderFunnel);
 document.getElementById('role-form').addEventListener('submit', e=>{
   e.preventDefault();
   renderRoleExplorer(document.getElementById('role-input').value);
