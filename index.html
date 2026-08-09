@@ -147,6 +147,27 @@
   .gate .g-job{font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.3;}
   .gate-arrow{align-self:center;color:var(--muted-dim);font-size:13px;}
 
+  /* ===== role explorer ===== */
+  .role-card{
+    border:1px solid var(--border-soft);border-radius:8px;padding:18px 20px 20px;margin-bottom:16px;background:var(--panel-alt);
+  }
+  .role-card-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:4px;}
+  .role-name{font-family:'Space Mono',monospace;font-size:14px;color:var(--green);font-weight:700;}
+  .role-sub{font-size:11.5px;color:var(--muted);}
+  .role-table{width:100%;border-collapse:collapse;margin-top:14px;font-size:12px;}
+  .role-table th{
+    text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);
+    padding:6px 10px;border-bottom:1px solid var(--border);font-weight:600;
+  }
+  .role-table td{padding:9px 10px;border-bottom:1px solid var(--border-soft);}
+  .role-table td.num{font-family:'Space Mono',monospace;text-align:right;}
+  .role-table tr:last-child td{border-bottom:none;}
+  .role-pool-bar{height:6px;background:var(--panel);border-radius:3px;overflow:hidden;margin-top:4px;min-width:70px;}
+  .role-pool-fill{height:100%;background:var(--amber);}
+  .role-caveat{font-size:11px;color:var(--muted);margin-top:10px;line-height:1.6;border-top:1px dashed var(--border);padding-top:10px;}
+  .role-caveat b{color:var(--amber);}
+  .role-more{font-size:12px;color:var(--muted);margin-top:4px;}
+
   /* ===== manifest table ===== */
   .table-controls{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
   .table-controls input, .table-controls select{
@@ -262,8 +283,22 @@
     </div>
   </section>
 
+  <section id="role-explorer-section">
+    <div class="sec-label"><span class="tag">05</span><h2>Role Explorer</h2><span class="rule"></span></div>
+    <p class="sec-note">Search for a role to see its stage-by-stage numbers: how many were called at each phase, what share of the original pool that is, and how many of the previous stage's candidates actually carried through to the next one — matched by name, not just batch counts divided against each other. When a stage spans more than one posting (re-announcements, multiple batches), that's called out, since dividing raw totals across separate batches can be misleading.</p>
+    <div class="lookup-card">
+      <form class="lookup-form" id="role-form">
+        <input type="text" id="role-input" placeholder="e.g. avionics, security officer, cabin crew" autocomplete="off" style="text-transform:none;">
+        <button type="submit">Explore role</button>
+      </form>
+      <div class="lookup-results" id="role-results">
+        <div class="lookup-empty">Search a role or keyword to see its stage-by-stage funnel and real pass-through rates.</div>
+      </div>
+    </div>
+  </section>
+
   <section id="lookup-section">
-    <div class="sec-label"><span class="tag">05</span><h2>Check A Name</h2><span class="rule"></span></div>
+    <div class="sec-label"><span class="tag">06</span><h2>Check A Name</h2><span class="rule"></span></div>
     <p class="sec-note">Search the manifest for a candidate name to see every stage they've been called for, in order. Matching is by exact name text as printed in each announcement — minor spelling variants between postings won't be linked automatically.</p>
     <div class="lookup-card">
       <form class="lookup-form" id="lookup-form">
@@ -277,7 +312,7 @@
   </section>
 
   <section id="manifest-section">
-    <div class="sec-label"><span class="tag">06</span><h2>Full Manifest</h2><span class="rule"></span></div>
+    <div class="sec-label"><span class="tag">07</span><h2>Full Manifest</h2><span class="rule"></span></div>
     <div class="table-controls">
       <input type="text" id="filter-text" placeholder="Filter by job title or location…">
       <select id="filter-stage"><option value="">All stages</option></select>
@@ -485,6 +520,107 @@ function renderCharts(){
   });
 }
 
+/* ============ RENDER: ROLE EXPLORER ============ */
+function renderRoleExplorer(query){
+  const container = document.getElementById('role-results');
+  const q = (query||'').trim().toUpperCase();
+  if(!q){
+    container.innerHTML = '<div class="lookup-empty">Search a role or keyword to see its stage-by-stage funnel and real pass-through rates.</div>';
+    return;
+  }
+
+  // Group records by normalized job title
+  const roleGroups = new Map(); // normKey -> {displayName, records:[]}
+  RECORDS.forEach(r=>{
+    const raw = (r.job_title||'').trim();
+    if(!raw) return;
+    const norm = raw.toUpperCase().replace(/\s+/g,' ');
+    if(!norm.includes(q)) return;
+    if(!roleGroups.has(norm)) roleGroups.set(norm, {displayName: raw, records: []});
+    roleGroups.get(norm).records.push(r);
+  });
+
+  if(roleGroups.size === 0){
+    container.innerHTML = '<div class="lookup-empty">No position matching "'+query+'" found on the manifest. Try a shorter or more general keyword.</div>';
+    return;
+  }
+
+  const LIMIT = 6;
+  const entries = [...roleGroups.values()];
+  let html = '';
+
+  entries.slice(0, LIMIT).forEach(role=>{
+    // Group this role's records by canonical stage, in pipeline order
+    const stageData = {}; // stage -> {names:Set, postings:0}
+    role.records.forEach(r=>{
+      if(!stageData[r._stage]) stageData[r._stage] = {names:new Set(), postings:0};
+      stageData[r._stage].postings += 1;
+      r._candidates.forEach(n=>stageData[r._stage].names.add(n));
+    });
+    const stagesPresent = STAGE_ORDER.filter(s=>stageData[s]);
+    if(stagesPresent.length === 0) return;
+
+    // Use the union of everyone who ever appeared for this role, across every stage, as the
+    // denominator — not just the first stage's headcount. A role's postings can span several
+    // separate hiring rounds over time rather than one clean funnel, and dividing by an
+    // arbitrary "first" round can push percentages past 100%. This keeps every figure bounded
+    // and readable as "share of everyone ever called for this role."
+    const applicantUniverse = new Set();
+    Object.values(stageData).forEach(d => d.names.forEach(n=>applicantUniverse.add(n)));
+    const poolBaseline = applicantUniverse.size || 1;
+    let prevSet = null;
+    const rows = stagesPresent.map(stage=>{
+      const d = stageData[stage];
+      const pctOfPool = d.names.size / poolBaseline * 100;
+      let carried = null;
+      if(prevSet){
+        let overlap = 0;
+        d.names.forEach(n=>{ if(prevSet.has(n)) overlap++; });
+        carried = prevSet.size > 0 ? (overlap / prevSet.size * 100) : null;
+      }
+      prevSet = d.names;
+      return {stage, postings:d.postings, count:d.names.size, pctOfPool, carried};
+    });
+
+    const multiPostingStages = rows.filter(r=>r.postings > 1);
+
+    html += `<div class="role-card">
+      <div class="role-card-head">
+        <div class="role-name">${role.displayName}</div>
+        <div class="role-sub">${role.records.length} posting${role.records.length>1?'s':''} on the manifest</div>
+      </div>
+      <table class="role-table">
+        <thead><tr><th>Stage</th><th>Postings</th><th style="text-align:right">Called</th><th>% of role's applicant pool</th><th style="text-align:right">Carried from prev.</th></tr></thead>
+        <tbody>`;
+    rows.forEach(r=>{
+      html += `<tr>
+        <td>${r.stage}</td>
+        <td class="num">${r.postings}</td>
+        <td class="num">${r.count.toLocaleString()}</td>
+        <td>
+          <div class="num">${r.pctOfPool.toFixed(1)}%</div>
+          <div class="role-pool-bar"><div class="role-pool-fill" style="width:${Math.min(100,r.pctOfPool).toFixed(1)}%"></div></div>
+        </td>
+        <td class="num">${r.carried===null ? '—' : r.carried.toFixed(1)+'%'}</td>
+      </tr>`;
+    });
+    html += `</tbody></table>`;
+
+    html += `<div class="role-caveat"><b>Note:</b> figures combine every posting under this exact title. If it spans several hiring drives over time rather than one linear funnel, "carried from previous" (real name-matching between stages) is the more trustworthy number — a low value there is a sign you're looking at separate rounds, not one cohort narrowing down.`;
+    if(multiPostingStages.length > 0){
+      html += ` In particular, ${multiPostingStages.map(r=>`${r.stage} (${r.postings} postings)`).join(', ')} each span more than one posting here — likely separate batches or re-announcements, combined and de-duplicated.`;
+    }
+    html += `</div>`;
+    html += `</div>`;
+  });
+
+  if(entries.length > LIMIT){
+    html += `<div class="role-more">…and ${entries.length - LIMIT} more matching position${entries.length-LIMIT>1?'s':''}. Try a more specific keyword to narrow this down.</div>`;
+  }
+
+  container.innerHTML = html;
+}
+
 /* ============ RENDER: POSITIONS BREAKDOWN ============ */
 function renderPositions(){
   const filterText = document.getElementById('pos-filter').value.trim().toUpperCase();
@@ -651,6 +787,10 @@ function renderAll(){
   renderPositions();
 }
 
+document.getElementById('role-form').addEventListener('submit', e=>{
+  e.preventDefault();
+  renderRoleExplorer(document.getElementById('role-input').value);
+});
 document.getElementById('lookup-form').addEventListener('submit', e=>{
   e.preventDefault();
   renderLookup(document.getElementById('lookup-input').value);
